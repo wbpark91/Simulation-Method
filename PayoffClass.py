@@ -8,16 +8,16 @@ Created on Sun Sep  3 16:28:57 2017
 import numpy as np
 
 def callPayoff(s, k):
-    return np.where(s[-1] > k, s[-1] - k, 0)
+    return np.where(s > k, s - k, 0)
 
 def putPayoff(s, k):
-    return np.where(s[-1] > k, 0, k - s[-1])
+    return np.where(s > k, 0, k - s)
 
 def callPayoff_DG(s, k):
-    return np.where(s[-1] > k, 1, 0)
+    return np.where(s > k, 1, 0)
 
 def putPayoff_DG(s, k):
-    return np.where(s[-1] > k, 0, 1)
+    return np.where(s > k, 0, 1)
 
 if __name__ == '__main__':
     path = np.exp(np.random.randn(1, 100)) * 100

@@ -45,7 +45,7 @@ class CallOption(Option):
             pass
         elif self.pricingMethod == 1:   #if MCS
             payoff = calcPayoff_MCS(self.marketVariable, self.t, 100000, 100,
-                                    self.k, PayoffClass.callPayoff)
+                                    self.k, PayoffClass.callPayoff)[-1]
             return np.exp(-self.marketVariable.r * self.t) * (payoff.mean())
         else:                           #Tree
             pass
