@@ -113,34 +113,34 @@ def spotToBond(spot, dt):
 
 #Libor Market Model Simulation Function
 def LMMSimulation(spot, forward, simnum):
-        #F[k][t_j] generate
-        frate = []
-        for i in range(10):
-            ar = np.zeros([simnum * 2, i+2])
-            ar[:,0] = forward[:,i]
-            frate.append(ar)
+    #F[k][t_j] generate
+    frate = []
+    for i in range(10):
+        ar = np.zeros([simnum * 2, i+2])
+        ar[:,0] = forward[:,i]
+        frate.append(ar)
+    
+    #Simulation
+    spot = [np.zeros(simnum*2) + spot[0]]
+    for i in range(10):
         
-        #Simulation
-        spot = [np.zeros(simnum*2) + spot[0]]
-        for i in range(10):
+        #Get Drift
+        drift = getDrift(forward, lamda, i, dt)
+        
+        #Generate Random Number
+        eps = np.random.randn(simnum)
+        eps = np.r_[eps, -eps]      # Antithetic Variable Technique
+        
+        for j in range(10-i):
+            diff = lamda[j] * eps * np.sqrt(dt)
+            frate[j][:,i+1] = frate[j][:,i] * np.exp(drift[:,j] * dt + diff)
             
-            #Get Drift
-            drift = getDrift(forward, lamda, i, dt)
-            
-            #Generate Random Number
-            eps = np.random.randn(simnum)
-            eps = np.r_[eps, -eps]      # Antithetic Variable Technique
-            
-            for j in range(10-i):
-                diff = lamda[j] * eps * np.sqrt(dt)
-                frate[j][:,i+1] = frate[j][:,i] * np.exp(drift[:,j] * dt + diff)
-                
-            ir = frate.pop(0)[:,-1]
-            spot.append(ir)
-            forward = np.zeros([simnum*2, 9-i])
-            for k in range(len(forward[0])):
-                forward[:,k] = frate[k][:,i+1]
-        return spot
+        ir = frate.pop(0)[:,-1]
+        spot.append(ir)
+        forward = np.zeros([simnum*2, 9-i])
+        for k in range(len(forward[0])):
+            forward[:,k] = frate[k][:,i+1]
+    return spot
 
 if __name__ == '__main__':
     #Variable Initialization
