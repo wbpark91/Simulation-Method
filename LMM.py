@@ -116,19 +116,19 @@ def LMMSimulation(spot, forward, simnum):
     #F[k][t_j] generate
     frate = []
     for i in range(10):
-        ar = np.zeros([simnum * 2, i+2])
+        ar = np.zeros([simnum, i+2])
         ar[:,0] = forward[:,i]
         frate.append(ar)
     
     #Simulation
-    spot = [np.zeros(simnum*2) + spot[0]]
+    spot = [np.zeros(simnum) + spot[0]]
     for i in range(10):
         
         #Get Drift
         drift = getDrift(forward, lamda, i, dt)
         
         #Generate Random Number
-        eps = np.random.randn(simnum)
+        eps = np.random.randn(int(0.5 * simnum))
         eps = np.r_[eps, -eps]      # Antithetic Variable Technique
         
         for j in range(10-i):
@@ -137,7 +137,7 @@ def LMMSimulation(spot, forward, simnum):
             
         ir = frate.pop(0)[:,-1]
         spot.append(ir)
-        forward = np.zeros([simnum*2, 9-i])
+        forward = np.zeros([simnum, 9-i])
         for k in range(len(forward[0])):
             forward[:,k] = frate[k][:,i+1]
     return spot
@@ -151,10 +151,10 @@ if __name__ == '__main__':
     t = np.arange(1, 11)
     dt = 1
     maturity = 10
-    simnum = 50000
+    simnum = 100000
     
     #Calculate Forward Rate from Spot Rate
-    forward = np.zeros([simnum*2, 10]) \
+    forward = np.zeros([simnum, 10]) \
         + np.array([getForwardRate(spot, i, i+1) for i in range(1, 11)])
     
     #Calculate Lambda
