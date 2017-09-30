@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 """
 Created on Tue Sep 12 16:07:22 2017
-
 @author: park-wanbae
 """
 
@@ -34,17 +33,16 @@ class RatchetCap(Cap):
         self.strike = spot + self.spread
     
     def getCapletPrice(self, spotProcess):  #Under Rolling-Forward Measure
-        bond = spotToBond(spotProcess, self.dt)
-        df = bond[0]
+        df = 0
         result = []
         numLoop = int(self.maturity / self.dt)    #Number of loop
         for i in range(numLoop):
+            df = df + spotProcess[i+1]
             self.getStrike(spotProcess[i])
             payoff = self.getPayoff(spotProcess[i+1])
-            dpoff = payoff * df
+            dpoff = payoff * np.exp(-df)
             price = dpoff.mean()
             result.append(price)
-            df = df * bond[i+1]
         return result
 
 class StickyCap(Cap):
@@ -63,17 +61,16 @@ class StickyCap(Cap):
                                self.strike, spot) + self.spread
     
     def getCapletPrice(self, spotProcess):
-        bond = spotToBond(spotProcess, self.dt)
-        df = bond[0]
+        df = 0
         self.getStrike(spotProcess[0])
         numLoop = int(self.maturity / self.dt)
         result = []
         for i in range(numLoop):
+            df = df + spotProcess[i+1]
             payoff = self.getPayoff(spot[i+1])
-            dpoff = payoff * df
+            dpoff = payoff * np.exp(-df)
             price = dpoff.mean()
             result.append(price)
-            df = df * bond[i+1]
             self.getStrike(spot[i+1])
         return result
 
@@ -92,14 +89,14 @@ def forwardVol(sigma, t, dt, k):
 def getDrift(forward, lamda, j, dt):        # drift 계산
     lam = lamda[:len(lamda) - j]
     #dt*Fi*lambda[i-j-1] / (1+dt*Fi)
-    drift1 = forward * lam * dt / (1 + dt * forward) 
+    drift1 = forward * lam * dt / (1 + dt * forward)
     drift = np.zeros([len(drift1), len(drift1[0])])  # Drift matrix
     for i in range(len(drift[0])):
-        drift[:,i] = (drift1[:,:i]*lamda[i]).sum(axis = 1) \
+        drift[:,i] = (drift1[:,:i+1]*lamda[i]).sum(axis = 1) \
             - (0.5 * lamda[i] ** 2)
     return drift
 
-def getLambda(sigma, t, dt, maturity):
+def getLambda(sigma, t, dt, maturity):      #Volatility로부터 Lambda 계산함수
     lamda = np.zeros(maturity)
     for k in range(maturity):
         lamda[k] = forwardVol(sigma, t, dt, k)
@@ -118,7 +115,7 @@ def LMMSimulation(spot, forward, simnum):
     for i in range(10):
         ar = np.zeros([simnum, i+2])
         ar[:,0] = forward[:,i]
-        frate.append(ar)
+        frate.append(ar)    
     
     #Simulation
     spot = [np.zeros(simnum) + spot[0]]
@@ -135,8 +132,7 @@ def LMMSimulation(spot, forward, simnum):
             diff = lamda[j] * eps * np.sqrt(dt)
             frate[j][:,i+1] = frate[j][:,i] * np.exp(drift[:,j] * dt + diff)
             
-        ir = frate.pop(0)[:,-1]
-        spot.append(ir)
+        spot.append(frate.pop(0)[:,-1])
         forward = np.zeros([simnum, 9-i])
         for k in range(len(forward[0])):
             forward[:,k] = frate[k][:,i+1]
@@ -159,9 +155,9 @@ if __name__ == '__main__':
     
     #Calculate Lambda
     lamda = getLambda(sigma, t, dt, maturity)
-    
+
     #Generate Future Spot Rate
-    spot = LMMSimulation(spot, forward, simnum) 
+    spot = LMMSimulation(spot, forward, simnum)
   
     #Ratchet Cap
     rCap = RatchetCap(100, 0.0025, 10, 1)
