@@ -1,2 +1,3 @@
 *.docx
+*.xcuserstate
 __pycache__
